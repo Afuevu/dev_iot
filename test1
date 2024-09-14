@@ -1,0 +1,80 @@
+	adc1 = adcValue[4] + adc1;  // dc battery
+	adc2 = adcValue[1] + adc2; //
+
+	//adc3 = adcValue[3] + adc3;
+
+	adc4 = adcValue[2] + adc4; // dc currrent
+
+	if (inverter_out.temp = adcValue[0], inverter_out.temp > inverter_out.max) { // initially adcValue[2]
+		inverter_out.max = inverter_out.temp;
+	}
+	if (mains.temp = adcValue[1], mains.temp > mains.max) { // initially adcValue[2]
+		mains.max = mains.temp;
+	}
+//	if (ac_current.temp = adcValue[], ac_current.temp > ac_current.max) { // initially adcValue[2]
+//		ac_current.max = ac_current.temp;
+//	}
+
+	if (test_values > 30000) {
+		test_values = 0;
+		if (lowbattery == 1) {
+
+			GPIOB->ODR ^= (1 << 3);
+		} else
+			BUZZEROFF;
+	}
+
+	if (lcd_timeout > 50000) {
+		lcd_change++;
+		if (lcd_change > 4) {
+			lcd_change = 0;
+		}
+		//
+		lcd_timeout = 0;
+
+	}
+	if (value1 > 400) {
+		value1 = 0;
+		inverter_out.max = inverter_out.max * (6.6 / 4095);
+		mains.max = mains.max * (6.6 / 4095);
+		ac_current.max = ac_current.max * (6.6 / 4095);
+
+		inverter_out.max = inverter_out.max - 3.3;
+		mains.max = mains.max - 3.3;
+		ac_current.max = ac_current.max - 3.3;
+
+		inverter_out.max = inverter_out.max * 244.73;
+		mains.max = mains.max * 127.73;
+		ac_current.max = ac_current.max * 12.0;
+
+		inverter_out.value += (inverter_out.max * 0.707106);
+		mains.value += (mains.max * 0.707106) + 17;
+		ac_current.value += (ac_current.max * 0.707106);
+
+		mains.temp = 0;
+		inverter_out.temp = 0;
+
+		mains.max = 0;
+		inverter_out.max = 0;
+		timer2_count++;
+	}
+
+	if (timer2_count > 50) {
+		inverter_out.final_value = inverter_out.value / timer2_count;
+		feedBack = inverter_out.final_value;
+		if (inverter_out.final_value < 65.00) {
+			inverter_out.final_value = 0;
+		}
+		mains.final_value = mains.value / timer2_count;
+		if (mains.final_value < 65.00) {
+			mains.final_value = 0;
+		}
+		ac_current.final_value = ac_current.value / timer2_count;
+
+		inverter_out.value = 0;
+		mains.value = 0;
+		ac_current.value = 0;
+		//GPIOA->ODR ^= (1 << 11);
+		eni = inverter_out.final_value;
+		timer2_count = 0;
+	}
